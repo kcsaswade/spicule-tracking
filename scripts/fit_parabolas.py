@@ -1,21 +1,29 @@
 """
-Fit parabolic trajectories to reconstructed spicule apex tracks.
+Fit quadratic trajectories to reconstructed spicule apex tracks.
 
-Input:
-    outputs/v2/track_catalog.json
+Inputs
+------
+outputs/v2/tracks_full.json
+outputs/parabola_classification/classification.csv
 
-Output:
-    outputs/v2/parabolic_fit_catalog.csv
+Outputs
+-------
+outputs/parabola_fits/
 
-Model:
-    z(t) = A t^2 + B t + C
+    parabola_catalog.csv
+    parabola_catalog.json
 
-where
-    initial_velocity      = B
-    effective_acceleration = -2 A
+    acceleration_histogram.png
+    initial_velocity_histogram.png
+    apex_height_histogram.png
+    rmse_histogram.png
+    r2_histogram.png
 
-Only sufficiently long, single-turn trajectories are accepted
-for fitting.
+    accepted_fits.png
+    rejected_fits.png
+
+    fit_examples/
+        track_XXXX.png
 """
 
 from pathlib import Path
@@ -23,282 +31,578 @@ import json
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 # ==========================================================
 # Configuration
 # ==========================================================
 
-TRACK_FILE = Path("outputs/v2/track_catalog.json")
-OUTPUT_FILE = Path("outputs/v2/parabolic_fit_catalog.csv")
+TRACK_FILE = Path("outputs/v2/tracks_full.json")
+CLASS_FILE = Path(
+    "outputs/parabola_classification/classification_catalog.csv"
+)
 
-MIN_LIFETIME = 8          # frames
-MIN_POINTS = 8            # stored trajectory samples
-REQUIRE_ONE_TURN = True
+OUTPUT_DIR = Path("outputs/parabola_fits")
+FIT_EXAMPLE_DIR = OUTPUT_DIR / "fit_examples"
 
-# ----------------------------------------------------------
-# Utility functions
-# ----------------------------------------------------------
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+FIT_EXAMPLE_DIR.mkdir(parents=True, exist_ok=True)
 
-def count_turning_points(zs):
+MIN_POINTS = 5
+
+# endpoint trimming threshold
+TRIM_SIGMA = 2.5
+
+# robust fit threshold
+ROBUST_SIGMA = 2.5
+ROBUST_MAX_ITER = 3
+
+
+# ==========================================================
+# Utilities
+# ==========================================================
+
+def compute_fit_metrics(t, z, coeff):
     """
-    Count turning points in a z(t) trajectory.
-
-    A turning point is defined as a sign change of dz/dt.
-    Flat segments are ignored.
-    """
-
-    zs = np.asarray(zs, dtype=float)
-
-    if len(zs) < 3:
-        return 0
-
-    dz = np.diff(zs)
-    signs = np.sign(dz)
-
-    # propagate nonzero sign through flat regions
-    for i in range(1, len(signs)):
-        if signs[i] == 0:
-            signs[i] = signs[i - 1]
-
-    # backwards pass for leading zeros
-    for i in range(len(signs) - 2, -1, -1):
-        if signs[i] == 0:
-            signs[i] = signs[i + 1]
-
-    turns = 0
-    for i in range(1, len(signs)):
-        if signs[i] != signs[i - 1]:
-            turns += 1
-
-    return turns
-
-
-def fit_track(times, zs):
-    """
-    Perform quadratic fit.
-
-    Returns
-    -------
-    dict containing fit parameters.
+    Compute fit, RMSE and R².
     """
 
-    times = np.asarray(times, dtype=float)
-    zs = np.asarray(zs, dtype=float)
+    z_fit = np.polyval(coeff, t)
 
-    # shift origin for numerical stability
-    tau = times - times[0]
+    residual = z - z_fit
 
-    # quadratic fit
-    A, B, C = np.polyfit(tau, zs, deg=2)
+    rmse = np.sqrt(np.mean(residual ** 2))
 
-    z_fit = np.polyval([A, B, C], tau)
+    ss_res = np.sum(residual ** 2)
+    ss_tot = np.sum((z - np.mean(z)) ** 2)
 
-    residuals = zs - z_fit
-
-    rss = np.sum(residuals ** 2)
-    tss = np.sum((zs - np.mean(zs)) ** 2)
-
-    if tss > 0:
-        r2 = 1.0 - rss / tss
-    else:
+    if ss_tot < 1e-12:
         r2 = np.nan
-
-    rmse = np.sqrt(np.mean(residuals ** 2))
-
-    # physical interpretation
-    initial_velocity = B
-    effective_acceleration = -2.0 * A
-
-    if np.abs(A) > 1e-12:
-        apex_time = -B / (2.0 * A)
-        apex_height = np.polyval([A, B, C], apex_time)
     else:
-        apex_time = np.nan
-        apex_height = np.nan
+        r2 = 1.0 - ss_res / ss_tot
+
+    return z_fit, residual, rmse, r2
+
+
+# ----------------------------------------------------------
+
+def direct_fit(t, z):
+    """
+    Standard quadratic least-squares fit.
+    """
+
+    coeff = np.polyfit(t, z, 2)
+
+    z_fit, residual, rmse, r2 = compute_fit_metrics(
+        t,
+        z,
+        coeff,
+    )
 
     return {
-        "A": A,
-        "B": B,
-        "C": C,
-        "initial_velocity": initial_velocity,
-        "effective_acceleration": effective_acceleration,
-        "fitted_apex_time": apex_time,
-        "fitted_apex_height": apex_height,
-        "r2": r2,
+        "coeff": coeff,
+        "t": t,
+        "z": z,
+        "z_fit": z_fit,
         "rmse": rmse,
+        "r2": r2,
+        "n_trimmed": 0,
+        "n_outliers_removed": 0,
+    }
+
+
+# ----------------------------------------------------------
+
+def trimmed_fit(t, z):
+    """
+    Remove endpoint outliers and refit.
+    """
+
+    coeff = np.polyfit(t, z, 2)
+
+    z_fit, residual, rmse, r2 = compute_fit_metrics(
+        t,
+        z,
+        coeff,
+    )
+
+    keep = np.ones(len(z), dtype=bool)
+
+    if abs(residual[0]) > TRIM_SIGMA * rmse:
+        keep[0] = False
+
+    if abs(residual[-1]) > TRIM_SIGMA * rmse:
+        keep[-1] = False
+
+    if keep.sum() < MIN_POINTS:
+        keep[:] = True
+
+    coeff = np.polyfit(
+        t[keep],
+        z[keep],
+        2,
+    )
+
+    z_fit, residual, rmse, r2 = compute_fit_metrics(
+        t[keep],
+        z[keep],
+        coeff,
+    )
+
+    return {
+        "coeff": coeff,
+        "t": t[keep],
+        "z": z[keep],
+        "z_fit": z_fit,
+        "rmse": rmse,
+        "r2": r2,
+        "n_trimmed": len(z) - keep.sum(),
+        "n_outliers_removed": 0,
+    }
+
+
+# ----------------------------------------------------------
+
+def robust_fit(t, z):
+    """
+    Iterative sigma-clipped quadratic fit.
+    """
+
+    mask = np.ones(len(z), dtype=bool)
+
+    for _ in range(ROBUST_MAX_ITER):
+
+        if mask.sum() < MIN_POINTS:
+            break
+
+        coeff = np.polyfit(
+            t[mask],
+            z[mask],
+            2,
+        )
+
+        z_fit_all = np.polyval(coeff, t)
+
+        residual = z - z_fit_all
+
+        sigma = residual[mask].std()
+
+        if sigma < 1e-10:
+            break
+
+        new_mask = np.abs(residual) < ROBUST_SIGMA * sigma
+
+        if np.all(new_mask == mask):
+            break
+
+        mask = new_mask
+
+    if mask.sum() < MIN_POINTS:
+        mask[:] = True
+
+    coeff = np.polyfit(
+        t[mask],
+        z[mask],
+        2,
+    )
+
+    z_fit, residual, rmse, r2 = compute_fit_metrics(
+        t[mask],
+        z[mask],
+        coeff,
+    )
+
+    return {
+        "coeff": coeff,
+        "t": t[mask],
+        "z": z[mask],
+        "z_fit": z_fit,
+        "rmse": rmse,
+        "r2": r2,
+        "n_trimmed": 0,
+        "n_outliers_removed": len(z) - mask.sum(),
     }
 
 
 # ==========================================================
-# Load tracks
+# Load inputs
 # ==========================================================
 
-print("Loading track catalog...")
+print("Loading tracks...")
 
 with open(TRACK_FILE, "r") as f:
     tracks = json.load(f)
 
-print(f"Loaded {len(tracks)} tracks.\n")
+track_lookup = {
+    tr["track_id"]: tr
+    for tr in tracks
+}
+
+classification = pd.read_csv(CLASS_FILE)
+
+print(f"Loaded {len(track_lookup)} tracks.")
+print(
+    f"Loaded {len(classification)} classifications.\n"
+)
 
 # ==========================================================
 # Main fitting loop
 # ==========================================================
 
-rows = []
+catalog = []
 
-n_attempted = 0
-n_accepted = 0
+accepted_examples = []
+rejected_examples = []
 
-for tr in tracks:
+for _, row in classification.iterrows():
 
-    lifetime = tr["lifetime_frames"]
+    track_id = int(row["track_id"])
+    cls = str(row["class"]).strip().upper()
 
-    times = tr.get("times", [])
-    xs = tr.get("xs", [])
-    zs = tr.get("zs", [])
+    tr = track_lookup.get(track_id)
 
-    n_points = len(zs)
+    if tr is None:
+        continue
 
-    turning_points = count_turning_points(zs)
+    t = np.asarray(tr["times"], dtype=float)
+    z = np.asarray(tr["zs"], dtype=float)
 
-    accepted = True
+    if len(t) < MIN_POINTS:
+        continue
 
-    if lifetime < MIN_LIFETIME:
-        accepted = False
+    tau = t - t[0]
 
-    if n_points < MIN_POINTS:
-        accepted = False
+    if cls == "E":
+        rejected_examples.append((tau, z))
+        catalog.append(
+            {
+                "track_id": track_id,
+                "class": cls,
+                "fit_status": "rejected",
+            }
+        )
+        continue
 
-    if REQUIRE_ONE_TURN and turning_points != 1:
-        accepted = False
+    try:
 
-    row = {
-        "track_id": tr["track_id"],
-        "lifetime_frames": lifetime,
-        "duration": tr["duration"],
-        "n_points": n_points,
-        "turning_points": turning_points,
-        "observed_max_height": tr["max_z"],
-        "observed_min_height": tr["min_z"],
-        "horizontal_drift": tr["horizontal_drift"],
-        "accepted": accepted,
-    }
+        if cls == "A":
+            result = direct_fit(tau, z)
+            fit_method = "direct"
 
-    if accepted:
+        elif cls == "B":
+            result = direct_fit(tau, z)
+            fit_method = "truncated"
 
-        n_attempted += 1
+        elif cls == "C":
+            result = trimmed_fit(tau, z)
+            fit_method = "trimmed"
 
-        try:
-            fit = fit_track(times, zs)
+        elif cls == "D":
+            result = robust_fit(tau, z)
+            fit_method = "robust"
 
-            row.update(fit)
+        else:
+            continue
 
-            n_accepted += 1
+    except Exception:
+        print(
+            f"Skipping track {track_id}: fit failed."
+        )
+        continue
 
-        except Exception as exc:
+    coeff = result["coeff"]
 
-            print(
-                f"Warning: fit failed for "
-                f"track {tr['track_id']} ({exc})"
-            )
+    A, B, C = coeff
 
-            row.update({
-                "A": np.nan,
-                "B": np.nan,
-                "C": np.nan,
-                "initial_velocity": np.nan,
-                "effective_acceleration": np.nan,
-                "fitted_apex_time": np.nan,
-                "fitted_apex_height": np.nan,
-                "r2": np.nan,
-                "rmse": np.nan,
-            })
+    acceleration = 2.0 * A
+    deceleration = -2.0 * A
+    initial_velocity = B
 
-            row["accepted"] = False
-
+    if abs(A) > 1e-12:
+        t_apex = -B / (2.0 * A)
+        z_apex = np.polyval(coeff, t_apex)
     else:
+        t_apex = np.nan
+        z_apex = np.nan
 
-        row.update({
-            "A": np.nan,
-            "B": np.nan,
-            "C": np.nan,
-            "initial_velocity": np.nan,
-            "effective_acceleration": np.nan,
-            "fitted_apex_time": np.nan,
-            "fitted_apex_height": np.nan,
-            "r2": np.nan,
-            "rmse": np.nan,
-        })
+    if cls == "B":
+        apex_inside = (
+            -0.2 <= t_apex <= tau[-1] + 0.2
+        )
+    else:
+        apex_inside = True
 
-    rows.append(row)
+    catalog.append(
+        {
+            "track_id": track_id,
+            "class": cls,
+            "fit_status": "accepted",
+            "fit_method": fit_method,
+            "n_points": len(z),
+            "n_used": len(result["z"]),
+            "A": A,
+            "B": B,
+            "C": C,
+            "initial_velocity": initial_velocity,
+            "acceleration": acceleration,
+            "deceleration": deceleration,
+            "apex_time": t_apex,
+            "apex_height": z_apex,
+            "rmse": result["rmse"],
+            "r2": result["r2"],
+            "apex_inside_window": apex_inside,
+            "n_trimmed": result["n_trimmed"],
+            "n_outliers_removed":
+                result["n_outliers_removed"],
+        }
+    )
+
+    accepted_examples.append(
+        (
+            result["t"],
+            result["z"],
+            result["z_fit"],
+        )
+    )
+
+    # --------------------------------------------------
+    # Save individual figure
+    # --------------------------------------------------
+
+    plt.figure(figsize=(6, 4))
+
+    plt.plot(
+        result["t"],
+        result["z"],
+        "o",
+        ms=4,
+        label="Data",
+    )
+
+    t_dense = np.linspace(
+        result["t"].min(),
+        result["t"].max(),
+        200,
+    )
+
+    plt.plot(
+        t_dense,
+        np.polyval(coeff, t_dense),
+        lw=2,
+        label="Quadratic fit",
+    )
+
+    plt.xlabel(
+        r"Time since birth $\tau$ (s)"
+    )
+    plt.ylabel("Apex height z (Mm)")
+
+    plt.title(
+        f"Track {track_id}\n"
+        f"Class {cls} ({fit_method})\n"
+        f"R²={result['r2']:.3f}   "
+        f"RMSE={result['rmse']:.3f}"
+    )
+
+    plt.legend()
+    plt.tight_layout()
+
+    plt.savefig(
+        FIT_EXAMPLE_DIR
+        / f"track_{track_id:04d}.png",
+        dpi=120,
+    )
+
+    plt.close()
 
 # ==========================================================
 # Save catalog
 # ==========================================================
 
-df = pd.DataFrame(rows)
+catalog_df = pd.DataFrame(catalog)
 
-OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
-df.to_csv(OUTPUT_FILE, index=False)
+catalog_df.to_csv(
+    OUTPUT_DIR / "parabola_catalog.csv",
+    index=False,
+)
+
+# with open(
+#     OUTPUT_DIR / "parabola_catalog.json",
+#     "w",
+# ) as f:
+#     json.dump(
+#         catalog,
+#         f,
+#         indent=2,
+#     )
+catalog_df.to_json(
+    OUTPUT_DIR / "parabola_catalog.json", 
+    orient="records", 
+    indent=2
+)
+
+# ==========================================================
+# Diagnostic histograms
+# ==========================================================
+
+accepted = catalog_df[
+    catalog_df["fit_status"] == "accepted"
+]
+
+histograms = [
+    (
+        "initial_velocity",
+        "Initial velocity",
+        "initial_velocity_histogram.png",
+    ),
+    (
+        "acceleration",
+        "Acceleration",
+        "acceleration_histogram.png",
+    ),
+    (
+        "deceleration",
+        "Deceleration",
+        "deceleration_histogram.png",
+    ),
+    (
+        "apex_height",
+        "Fitted apex height",
+        "apex_height_histogram.png",
+    ),
+    (
+        "rmse",
+        "RMSE",
+        "rmse_histogram.png",
+    ),
+    (
+        "r2",
+        r"$R^2$",
+        "r2_histogram.png",
+    ),
+]
+
+for col, xlabel, fname in histograms:
+
+    plt.figure(figsize=(7, 5))
+
+    plt.hist(
+        accepted[col].dropna(),
+        bins=20,
+        edgecolor="black",
+    )
+
+    plt.xlabel(xlabel)
+    plt.ylabel("Count")
+
+    plt.tight_layout()
+
+    plt.savefig(
+        OUTPUT_DIR / fname,
+        dpi=150,
+    )
+
+    plt.close()
+
+# ==========================================================
+# Overview plot: accepted fits
+# ==========================================================
+
+plt.figure(figsize=(10, 7))
+
+for t, z, fit in accepted_examples[:30]:
+    plt.plot(
+        t,
+        z,
+        alpha=0.4,
+        lw=1,
+    )
+
+plt.xlabel(
+    r"Time since birth $\tau$ (s)"
+)
+plt.ylabel("Apex height z (Mm)")
+plt.title("Accepted fitted trajectories")
+
+plt.tight_layout()
+
+plt.savefig(
+    OUTPUT_DIR / "accepted_fits.png",
+    dpi=150,
+)
+
+plt.close()
+
+# ==========================================================
+# Overview plot: rejected fits
+# ==========================================================
+
+plt.figure(figsize=(10, 7))
+
+for t, z in rejected_examples[:30]:
+    plt.plot(
+        t,
+        z,
+        alpha=0.5,
+        lw=1,
+    )
+
+plt.xlabel(
+    r"Time since birth $\tau$ (s)"
+)
+plt.ylabel("Apex height z (Mm)")
+plt.title("Rejected trajectories")
+
+plt.tight_layout()
+
+plt.savefig(
+    OUTPUT_DIR / "rejected_fits.png",
+    dpi=150,
+)
+
+plt.close()
 
 # ==========================================================
 # Summary
 # ==========================================================
 
-print("========== PARABOLIC FIT SUMMARY ==========")
-print(f"Total tracks              : {len(df)}")
-print(f"Fit candidates            : {n_attempted}")
-print(f"Successful fits           : {n_accepted}")
+print("========== PARABOLA FIT SUMMARY ==========\n")
 
-good = df[df["accepted"] == True]
+print(
+    f"Accepted fits : "
+    f"{(catalog_df['fit_status']=='accepted').sum()}"
+)
 
-if len(good) > 0:
+print(
+    f"Rejected      : "
+    f"{(catalog_df['fit_status']=='rejected').sum()}"
+)
 
-    print()
-    print(f"Mean R²                   : {good['r2'].mean():.3f}")
-    print(f"Median R²                 : {good['r2'].median():.3f}")
-    print(f"Min R²                    : {good['r2'].min():.3f}")
+print()
 
-    print()
-    print("Initial velocity (Mm/s):")
-    print(f"  Mean                    : {good['initial_velocity'].mean():.3f}")
-    print(f"  Median                  : {good['initial_velocity'].median():.3f}")
+if len(accepted) > 0:
 
-    print()
-    print("Effective acceleration (Mm/s²):")
     print(
-        f"  Mean                    : "
-        f"{good['effective_acceleration'].mean():.3f}"
-    )
-    print(
-        f"  Median                  : "
-        f"{good['effective_acceleration'].median():.3f}"
+        f"Mean R²     : "
+        f"{accepted['r2'].mean():.4f}"
     )
 
-    print()
-    print("RMSE (Mm):")
-    print(f"  Mean                    : {good['rmse'].mean():.3f}")
-    print(f"  Median                  : {good['rmse'].median():.3f}")
-
-    print()
-    print("========== BEST FITS ==========")
-
-    cols = [
-        "track_id",
-        "lifetime_frames",
-        "r2",
-        "rmse",
-        "observed_max_height",
-        "fitted_apex_height",
-    ]
+    print(
+        f"Mean RMSE   : "
+        f"{accepted['rmse'].mean():.4f}"
+    )
 
     print(
-        good.sort_values(
-            "r2",
-            ascending=False,
-        )[cols].head(15).to_string(index=False)
+        f"Mean v0     : "
+        f"{accepted['initial_velocity'].mean():.4f}"
+    )
+
+    print(
+        f"Mean accel. : "
+        f"{accepted['acceleration'].mean():.4f}"
     )
 
 print()
-print(f"Saved parabolic fit catalog to:")
-print(f"  {OUTPUT_FILE}")
+print(
+    f"Saved results to: {OUTPUT_DIR}"
+)
