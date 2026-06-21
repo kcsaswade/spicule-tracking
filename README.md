@@ -178,8 +178,8 @@ Physical quantities are extracted:
 
 | Quantity               | Formula           |
 | ---------------------- | ----------------- |
-| Initial velocity       | (v_0=B)           |
-| Signed acceleration    | (a=2A)            |
+| Initial velocity       | $v_0=B$           |
+| Signed acceleration    | $a=2A$            |
 | Deceleration magnitude | (-2A)             |
 | Apex time              | (-B/(2A))         |
 | Apex height            | (z(t_{\rm apex})) |
