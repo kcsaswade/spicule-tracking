@@ -57,6 +57,9 @@ TRIM_SIGMA = 2.5
 ROBUST_SIGMA = 2.5
 ROBUST_MAX_ITER = 3
 
+# Global plot title configuration
+GLOBAL_TITLE = "50G Spicule Analysis"
+
 # ==========================================================
 # Physical units
 # ==========================================================
@@ -480,7 +483,7 @@ for _, row in classification.iterrows():
     plt.ylabel("Apex height z (Mm)")
 
     plt.title(
-        f"Track {track_id}\n"
+        f"{GLOBAL_TITLE} - Track {track_id}\n"
         f"Class {cls} ({fit_method})\n"
         f"R²={result['r2']:.3f}   "
         f"RMSE={result['rmse']:.3f}"
@@ -582,6 +585,8 @@ for col, xlabel, fname in histograms:
     plt.xlabel(xlabel)
     plt.ylabel("Count")
 
+    plt.title(f"{GLOBAL_TITLE}: Distribution of {xlabel}")
+
     plt.tight_layout()
 
     plt.savefig(
@@ -609,7 +614,7 @@ plt.xlabel(
     r"Time since birth $\tau$ (s)"
 )
 plt.ylabel("Apex height z (Mm)")
-plt.title("Accepted fitted trajectories")
+plt.title(f"{GLOBAL_TITLE}\nAccepted fitted trajectories")
 
 plt.tight_layout()
 
@@ -638,7 +643,7 @@ plt.xlabel(
     r"Time since birth $\tau$ (s)"
 )
 plt.ylabel("Apex height z (Mm)")
-plt.title("Rejected trajectories")
+plt.title(f"{GLOBAL_TITLE}\nRejected trajectories")
 
 plt.tight_layout()
 
