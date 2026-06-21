@@ -161,7 +161,7 @@ outputs/*/parabola_classification/
 
 ### 8. Quadratic fitting
 
-Only classes A and B are fitted.
+Only classes A, B and C are fitted.
 
 The model
 
