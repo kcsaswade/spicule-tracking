@@ -4,7 +4,7 @@ Fit quadratic trajectories to reconstructed spicule apex tracks.
 Inputs
 ------
 outputs/10G/v2/tracks_full.json
-outputs/10G/parabola_classification/classification.csv
+outputs/10G/parabola_classification/classification_catalog.csv
 
 Outputs
 -------
@@ -57,13 +57,16 @@ TRIM_SIGMA = 2.5
 ROBUST_SIGMA = 2.5
 ROBUST_MAX_ITER = 3
 
+# Global plot title configuration
+GLOBAL_TITLE = "10G Spicule Analysis"
+
 # ==========================================================
 # Physical units
 # ==========================================================
 
 SIM_TIME_TO_SEC = 100.0
 MM_TO_KM = 1000.0
-SOLAR_GRAVITY = 0.274  # km/s²
+ACCELERATION_RATIO = 0.274 # km/s² 
 
 # ==========================================================
 # Utilities
@@ -304,8 +307,6 @@ for _, row in classification.iterrows():
 
     try:
 
-        # result = direct_fit(tau, z)
-
         if cls == "A":
             fit_method = "direct"
             result = direct_fit(tau, z)
@@ -338,7 +339,7 @@ for _, row in classification.iterrows():
 
     deceleration = -2.0*A           # km/s²
 
-    acceleration_ratio = acceleration / SOLAR_GRAVITY
+    acceleration_ratio = acceleration / ACCELERATION_RATIO
 
     # upward-opening parabola
     if acceleration > 0:
@@ -482,7 +483,7 @@ for _, row in classification.iterrows():
     plt.ylabel("Apex height z (Mm)")
 
     plt.title(
-        f"Track {track_id}\n"
+        f"{GLOBAL_TITLE} - Track {track_id}\n"
         f"Class {cls} ({fit_method})\n"
         f"R²={result['r2']:.3f}   "
         f"RMSE={result['rmse']:.3f}"
@@ -551,7 +552,7 @@ histograms = [
     ),
     (
         "acceleration_ratio",
-        "Acceleration ratio (g)",
+        "Acceleration ratio",
         "acceleration_ratio_histogram.png"
     ),
     (
@@ -584,6 +585,8 @@ for col, xlabel, fname in histograms:
     plt.xlabel(xlabel)
     plt.ylabel("Count")
 
+    plt.title(f"{GLOBAL_TITLE}: Distribution of {xlabel}")
+
     plt.tight_layout()
 
     plt.savefig(
@@ -611,7 +614,7 @@ plt.xlabel(
     r"Time since birth $\tau$ (s)"
 )
 plt.ylabel("Apex height z (Mm)")
-plt.title("Accepted fitted trajectories")
+plt.title(f"{GLOBAL_TITLE}\nAccepted fitted trajectories")
 
 plt.tight_layout()
 
@@ -640,7 +643,7 @@ plt.xlabel(
     r"Time since birth $\tau$ (s)"
 )
 plt.ylabel("Apex height z (Mm)")
-plt.title("Rejected trajectories")
+plt.title(f"{GLOBAL_TITLE}\nRejected trajectories")
 
 plt.tight_layout()
 
