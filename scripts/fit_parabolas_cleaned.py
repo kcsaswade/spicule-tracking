@@ -303,16 +303,17 @@ for _, row in classification.iterrows():
 
     try:
 
-        result = direct_fit(tau, z)
-
         if cls == "A":
             fit_method = "direct"
+            result = direct_fit(tau, z)
 
         elif cls == "B":
-            fit_method = "partial"
+            fit_method = "truncated"
+            result = direct_fit(tau, z)
 
         elif cls == "C":
             fit_method = "trimmed"
+            result = trimmed_fit(tau, z)
 
     except Exception:
         print(
