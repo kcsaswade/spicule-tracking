@@ -180,11 +180,11 @@ Physical quantities are extracted:
 | ---------------------- | ----------------- |
 | Initial velocity       | $v_0=B$           |
 | Signed acceleration    | $a=2A$            |
-| Deceleration magnitude | (-2A)             |
-| Apex time              | (-B/(2A))         |
-| Apex height            | (z(t_{\rm apex})) |
+| Deceleration magnitude | $-2A$             |
+| Apex time              | $-B/(2A)$         |
+| Apex height            | $z(t_{\rm apex})$ |
 | RMSE                   | fit residual      |
-| (R^2)                  | goodness of fit   |
+| $R^2$                  | goodness of fit   |
 
 The final parameter catalog is stored in
 
@@ -233,7 +233,7 @@ outputs/
 The principal output of this repository is
 
 $$
-\left\{ (x_i(t_k),z_i(t_k)) \right\}_{k=1}^{N_i}
+\left\{ \left( x_{i}(t_{k}), z_{i}(t_{k}) \right) \right\}_{k=1}^{N_{i}}
 $$
 
 for every reconstructed spicule.
