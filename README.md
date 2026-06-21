@@ -55,9 +55,9 @@ is computed and normalized using a global background profile.
 
 Spicule material is isolated using a temperature interval
 
-[
+$$
 T_{\min}\le \log_{10}T \le T_{\max}.
-]
+$$
 
 This produces a binary canopy mask.
 
@@ -67,9 +67,9 @@ This produces a binary canopy mask.
 
 For every horizontal column, the highest segmented pixel is found, yielding an upper envelope
 
-[
+$$
 z_{\rm env}(x).
-]
+$$
 
 ---
 
@@ -77,9 +77,9 @@ z_{\rm env}(x).
 
 Local maxima of the smoothed envelope are identified to obtain spicule tip locations
 
-[
+$$
 (x_i,z_i).
-]
+$$
 
 ---
 
@@ -94,9 +94,9 @@ Detected tips are linked across successive frames using:
 
 This reconstructs complete trajectories
 
-[
+$$
 {(x_i(t_k),z_i(t_k))}_{k=1}^{N_i}.
-]
+$$
 
 The improved tracker (`tracker_v2.py`) minimizes trajectory stitching and identity swaps.
 
@@ -165,9 +165,9 @@ Only classes A and B are fitted.
 
 The model
 
-[
+$$
 z(t)=At^2+Bt+C
-]
+$$
 
 is fitted in physical units:
 
@@ -232,9 +232,9 @@ outputs/
 
 The principal output of this repository is
 
-[
-\left{(x_i(t_k),z_i(t_k))\right}_{k=1}^{N_i}
-]
+$$
+\left\{ (x_i(t_k),z_i(t_k)) \right\}_{k=1}^{N_i}
+$$
 
 for every reconstructed spicule.
 
