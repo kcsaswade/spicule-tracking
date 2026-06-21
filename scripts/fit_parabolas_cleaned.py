@@ -63,6 +63,7 @@ ROBUST_MAX_ITER = 3
 
 SIM_TIME_TO_SEC = 100.0
 MM_TO_KM = 1000.0
+SOLAR_GRAVITY = 0.274  # km/s²
 
 # ==========================================================
 # Utilities
@@ -337,6 +338,8 @@ for _, row in classification.iterrows():
 
     deceleration = -2.0*A           # km/s²
 
+    acceleration_ratio = acceleration / SOLAR_GRAVITY
+
     # upward-opening parabola
     if acceleration > 0:
 
@@ -418,6 +421,9 @@ for _, row in classification.iterrows():
 
             "deceleration_km_s2":
                 deceleration,
+
+            "acceleration_ratio":
+                acceleration_ratio,
 
             "apex_time_sec":
                 t_apex_sec,
@@ -542,6 +548,11 @@ histograms = [
         "deceleration_km_s2",
         "Deceleration magnitude (km/s²)",
         "deceleration_histogram.png"
+    ),
+    (
+        "acceleration_ratio",
+        "Acceleration ratio (g)",
+        "acceleration_ratio_histogram.png"
     ),
     (
         "apex_height_Mm",
@@ -683,6 +694,10 @@ if len(accepted) > 0:
     print(
         f"Mean deceleration : "
         f"{accepted['deceleration_km_s2'].mean():.4f}"
+    )
+    print(
+        f"Mean acceleration ratio : "
+        f"{accepted['acceleration_ratio'].mean():.4f}"
     )
 
 print()
