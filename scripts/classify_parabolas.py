@@ -4,11 +4,11 @@ well they resemble parabolic motion.
 
 Input
 -----
-outputs/10G/v2/tracks_full.json
+outputs/50G/v2/tracks_full.json
 
 Outputs
 -------
-outputs/10G/parabola_classification/
+outputs/50G/parabola_classification/
 
     classification_catalog.csv
     classification_catalog.json
@@ -48,9 +48,9 @@ from scipy.signal import savgol_filter
 # Configuration
 # ==========================================================
 
-TRACK_FILE = Path("outputs/10G/v2/tracks_full.json")
+TRACK_FILE = Path("outputs/50G/v2/tracks_full.json")
 
-OUTPUT_DIR = Path("outputs/10G/parabola_classification")
+OUTPUT_DIR = Path("outputs/50G/parabola_classification")
 
 CLASS_INFO = {
     "A": "class_A_perfect",

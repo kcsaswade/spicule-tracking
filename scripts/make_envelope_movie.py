@@ -1,8 +1,8 @@
 from pathlib import Path
 import cv2
 
-FRAME_DIR = Path("outputs/10G/envelope_frames")
-OUTFILE = "outputs/10G/movies/envelope_detection.mp4"
+FRAME_DIR = Path("outputs/50G/envelope_frames")
+OUTFILE = "outputs/50G/movies/envelope_detection.mp4"
 
 FPS = 10
 

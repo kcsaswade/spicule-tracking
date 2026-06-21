@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-JSON_FILE = "outputs/10G/envelope_detections.json"
+JSON_FILE = "outputs/50G/envelope_detections.json"
 
 
 def main():

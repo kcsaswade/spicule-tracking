@@ -3,7 +3,7 @@
 from src.io import SpiculeDataset
 from src.visualize import plot_frame, animate_frames
 
-DATAFILE = "data/raw/spicules_temperature_final.h5"
+DATAFILE = "data/raw/spicules_temperature_final_50G.h5"
 
 
 def main():
@@ -25,7 +25,7 @@ def main():
     # anim = animate_frames(
     #     ds,
     #     logscale=True,
-    #     save_path="outputs/10G/animations/raw_temperature.mp4"
+    #     save_path="outputs/50G/animations/raw_temperature.mp4"
     # )
 
     import matplotlib.pyplot as plt

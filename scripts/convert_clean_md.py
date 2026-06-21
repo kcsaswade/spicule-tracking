@@ -1,8 +1,8 @@
 import re
 from pathlib import Path
 
-input_file = "outputs/10G/parabola_fits/README_parabola.md"
-output_file = "outputs/10G/parabola_fits/README_parabola_cleaned.md"
+input_file = "outputs/50G/parabola_fits/README_parabola.md"
+output_file = "outputs/50G/parabola_fits/README_parabola_cleaned.md"
 
 text = Path(input_file).read_text(encoding="utf-8")
 

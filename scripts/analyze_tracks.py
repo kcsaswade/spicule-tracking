@@ -2,10 +2,10 @@
 Analyze reconstructed spicule trajectories.
 
 Input:
-    outputs/10G/v2/track_catalog.csv
+    outputs/50G/v2/track_catalog.csv
 
 Outputs:
-    outputs/10G/analysis/v2/
+    outputs/50G/analysis/v2/
         lifetime_histogram.png
         max_height_histogram.png
         horizontal_drift_histogram.png
@@ -24,9 +24,9 @@ from scipy.ndimage import gaussian_filter1d
 # Configuration
 # ==========================================================
 
-CATALOG_FILE = "outputs/10G/v2/track_catalog.csv"
-OUTPUT_DIR = Path("outputs/10G/analysis/v2/")
-TRACK_JSON = "outputs/10G/v2/tracks_full.json"
+CATALOG_FILE = "outputs/50G/v2/track_catalog.csv"
+OUTPUT_DIR = Path("outputs/50G/analysis/v2/")
+TRACK_JSON = "outputs/50G/v2/tracks_full.json"
 
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 

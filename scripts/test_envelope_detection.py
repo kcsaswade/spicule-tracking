@@ -13,7 +13,7 @@ from src.envelope import (
 import matplotlib.pyplot as plt
 import numpy as np
 
-DATAFILE = "data/raw/spicules_temperature_final.h5"
+DATAFILE = "data/raw/spicules_temperature_final_50G.h5"
 
 
 def main():

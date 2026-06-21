@@ -1,6 +1,6 @@
 from src.tracker_v2 import load_detections, run_tracker
 
-JSON_FILE = "outputs/10G/envelope_detections.json"
+JSON_FILE = "outputs/50G/envelope_detections.json"
 
 detections = load_detections(JSON_FILE)
 tracks = run_tracker(detections)

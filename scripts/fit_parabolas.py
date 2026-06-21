@@ -3,12 +3,12 @@ Fit quadratic trajectories to reconstructed spicule apex tracks.
 
 Inputs
 ------
-outputs/10G/v2/tracks_full.json
-outputs/10G/parabola_classification/classification.csv
+outputs/50G/v2/tracks_full.json
+outputs/50G/parabola_classification/classification.csv
 
 Outputs
 -------
-outputs/10G/parabola_fits/
+outputs/50G/parabola_fits/
 
     parabola_catalog.csv
     parabola_catalog.json
@@ -37,12 +37,12 @@ import matplotlib.pyplot as plt
 # Configuration
 # ==========================================================
 
-TRACK_FILE = Path("outputs/10G/v2/tracks_full.json")
+TRACK_FILE = Path("outputs/50G/v2/tracks_full.json")
 CLASS_FILE = Path(
-    "outputs/10G/parabola_classification/classification_catalog.csv"
+    "outputs/50G/parabola_classification/classification_catalog.csv"
 )
 
-OUTPUT_DIR = Path("outputs/10G/parabola_fits")
+OUTPUT_DIR = Path("outputs/50G/parabola_fits")
 FIT_EXAMPLE_DIR = OUTPUT_DIR / "fit_examples"
 
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)

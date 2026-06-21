@@ -2,11 +2,11 @@
 Build a catalog of reconstructed spicule tracks.
 
 Input:
-    outputs/10G/envelope_detections.json
+    outputs/50G/envelope_detections.json
 
 Outputs:
-    outputs/10G/v2/track_catalog.csv
-    outputs/10G/v2/track_catalog.json
+    outputs/50G/v2/track_catalog.csv
+    outputs/50G/v2/track_catalog.json
 """
 
 import json
@@ -24,10 +24,10 @@ from src.tracker_v2 import (
 # Configuration
 # ==========================================================
 
-DETECTION_FILE = "outputs/10G/envelope_detections.json"
+DETECTION_FILE = "outputs/50G/envelope_detections.json"
 
-OUTPUT_CSV = "outputs/10G/v2/track_catalog.csv"
-OUTPUT_JSON = "outputs/10G/v2/track_catalog.json"
+OUTPUT_CSV = "outputs/50G/v2/track_catalog.csv"
+OUTPUT_JSON = "outputs/50G/v2/track_catalog.json"
 
 # Tracker parameters
 # (must match those used in animate_tracker.py)
