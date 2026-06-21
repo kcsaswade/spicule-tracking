@@ -233,7 +233,7 @@ outputs/
 The principal output of this repository is
 
 $$
-\left\{ \left( x_{i}(t_{k}), z_{i}(t_{k}) \right) \right\}_{k=1}^{N_{i}}
+\left\lbrace \left( x_{i}(t_{k}), z_{i}(t_{k}) \right) \right\rbrace_{k=1}^{N_{i}}
 $$
 
 for every reconstructed spicule.
