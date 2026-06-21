@@ -43,9 +43,9 @@ data/raw/spicules_temperature_final_50G.h5
 
 The logarithmic temperature field
 
-[
+$$
 \log_{10}T(x,z,t)
-]
+$$
 
 is computed and normalized using a global background profile.
 
