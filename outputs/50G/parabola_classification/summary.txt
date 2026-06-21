@@ -1,0 +1,16 @@
+========== PARABOLA CLASSIFICATION ==========
+
+Total tracks : 222
+
+Class A :   48 tracks
+Class B :   26 tracks
+Class C :   20 tracks
+Class D :   65 tracks
+Class E :   63 tracks
+
+
+Mean fit quality:
+
+Mean R²     : 0.9138
+Mean NRMSE  : 0.0644
+Mean turns  : 1.20
