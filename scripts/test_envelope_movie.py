@@ -33,7 +33,7 @@ SMOOTH_SIGMA = 2.0
 PEAK_PROMINENCE = 0.5
 PEAK_DISTANCE = 15
 
-OUTPUT_DIR = Path("outputs/envelope_frames")
+OUTPUT_DIR = Path("outputs/10G/envelope_frames")
 
 
 def main():
@@ -132,10 +132,10 @@ def main():
     print()
     print("Finished.")
     # Save all detections to JSON
-    with open("outputs/envelope_detections.json", "w") as f:
+    with open("outputs/10G/envelope_detections.json", "w") as f:
         json.dump(all_detections, f, indent=2)
 
-    print("Saved detections to outputs/envelope_detections.json")
+    print("Saved detections to outputs/10G/envelope_detections.json")
     print(
         f"Mean detected tips/frame: "
         f"{np.mean(peak_counts):.2f}"

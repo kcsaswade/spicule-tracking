@@ -1,4 +1,4 @@
-from src.tracker import (
+from src.tracker_v2 import (
     load_detections,
     run_tracker,
 )
@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-JSON_FILE = "outputs/envelope_detections.json"
+JSON_FILE = "outputs/10G/envelope_detections.json"
 
 
 def main():

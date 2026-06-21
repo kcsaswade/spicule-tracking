@@ -25,7 +25,7 @@ def main():
     # anim = animate_frames(
     #     ds,
     #     logscale=True,
-    #     save_path="outputs/animations/raw_temperature.mp4"
+    #     save_path="outputs/10G/animations/raw_temperature.mp4"
     # )
 
     import matplotlib.pyplot as plt

@@ -4,7 +4,7 @@ Animate reconstructed spicule tracks.
 This script is intentionally independent of the detector.
 It uses:
     - original HDF5 file (background movie)
-    - outputs/envelope_detections.json (detector output)
+    - outputs/10G/envelope_detections.json (detector output)
     - src.tracker.run_tracker() (trajectory reconstruction)
 
 Detector improvements only require regenerating
@@ -29,8 +29,8 @@ from src.tracker_v2 import (
 # ==========================================================
 
 DATAFILE = "data/raw/spicules_temperature_final.h5"
-DETECTION_FILE = "outputs/envelope_detections.json"
-OUTPUT_MOVIE = "outputs/movies/tracker_overlay_top20_v2.mp4"
+DETECTION_FILE = "outputs/10G/envelope_detections.json"
+OUTPUT_MOVIE = "outputs/10G/movies/tracker_overlay_top20_v2.mp4"
 
 FPS = 10
 TAIL_LENGTH = 15          # previous detections to show

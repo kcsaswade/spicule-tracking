@@ -2,11 +2,11 @@
 Plot z(t) for all reconstructed spicule tracks.
 
 Input:
-    outputs/v2/tracks_full.json
+    outputs/10G/v2/tracks_full.json
 
 Outputs:
-    outputs/analysis/v2/z_vs_t_all_tracks.png
-    outputs/analysis/v2/z_vs_t_top20.png
+    outputs/10G/analysis/v2/z_vs_t_all_tracks.png
+    outputs/10G/analysis/v2/z_vs_t_top20.png
 """
 
 from pathlib import Path
@@ -19,8 +19,8 @@ import matplotlib.cm as cm
 # Configuration
 # ==========================================================
 
-TRACK_FILE = Path("outputs/v2/tracks_full.json")
-OUTPUT_DIR = Path("outputs/analysis/v2")
+TRACK_FILE = Path("outputs/10G/v2/tracks_full.json")
+OUTPUT_DIR = Path("outputs/10G/analysis/v2")
 
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 

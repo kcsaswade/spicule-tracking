@@ -4,8 +4,8 @@ import json
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
-TRACK_FILE = Path("outputs/v2/tracks_full.json")
-OUTPUT_FILE = Path("outputs/analysis/v2/top20_trajectories.png")
+TRACK_FILE = Path("outputs/10G/v2/tracks_full.json")
+OUTPUT_FILE = Path("outputs/10G/analysis/v2/top20_trajectories.png")
 
 # ----------------------------------------------------
 # Load full track catalog
