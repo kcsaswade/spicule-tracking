@@ -30,7 +30,7 @@ from src.tracker_v2 import (
 
 DATAFILE = "data/raw/spicules_temperature_final.h5"
 DETECTION_FILE = "outputs/envelope_detections.json"
-OUTPUT_MOVIE = "outputs/movies/tracker_overlay_v2.mp4"
+OUTPUT_MOVIE = "outputs/movies/tracker_overlay_v2_jun17.mp4"
 
 FPS = 10
 TAIL_LENGTH = 10          # previous detections to show
