@@ -288,7 +288,7 @@ for _, row in classification.iterrows():
     # Reject everything except A and B
     # ------------------------------------------
 
-    if cls not in ["A", "B"]:
+    if cls not in ["A", "B", "C"]:
         rejected_examples.append((tau, z))
 
         catalog.append(
@@ -308,8 +308,11 @@ for _, row in classification.iterrows():
         if cls == "A":
             fit_method = "direct"
 
-        else:
+        elif cls == "B":
             fit_method = "partial"
+
+        elif cls == "C":
+            fit_method = "trimmed"
 
     except Exception:
         print(
