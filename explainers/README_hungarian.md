@@ -96,21 +96,8 @@ Your tracker first computes a cost matrix (C).
 
 For every active track (i) and every detection (j):
 
-$$
-C_{ij}
-=
+$$ C_{ij} \sqrt{ \left( \frac{x_j-x_i^{\text{pred}}}{\sigma_x} \right)^2 + \left( \frac{z_j-z_i^{\text{pred}}}{\sigma_z} \right)^2 } + \text{penalties} $$
 
-\sqrt{
-\left(
-\frac{x_j-x_i^{\rm pred}}{\sigma_x}
-\right)^2
-+
-\left(
-\frac{z_j-z_i^{\rm pred}}{\sigma_z}
-\right)^2
-}
-+\text{penalties}.
-$$
 
 For example:
 
